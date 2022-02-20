@@ -1,0 +1,36 @@
+[Unit]
+Description=NV FTB Endeavour Server
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/ftb_endeavour
+Type=simple
+
+PrivateUsers=true
+
+User=minecraft
+Group=minecraft
+
+ProtectSystem=full
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+Environment="MCMINMEM=4096M" "MCMAXMEM=8192M" "SHUTDOWN_DELAY=5" "POST_SHUTDOWN_DELAY=10"
+
+ExecStartPre=python3 /opt/ftb_endeavour/webhook.py restart && /bin/sh -c '/usr/bin/screen -dmS ftb_endeavour'
+ExecStart=/bin/sh -c '/opt/ftb_endeavour/start.sh'
+
+ExecReload=/usr/bin/screen -p 0 -S ftb_endeavour -X eval 'stuff "say SERVER SHUTTING DOWN. Saving map..."\\015'
+ExecStop=/bin/sh -c '/bin/sleep ${SHUTDOWN_DELAY}'
+ExecStop=/usr/bin/screen -p 0 -S ftb_endeavour -X eval 'stuff "save-all"\\015'
+ExecStop=/usr/bin/screen -p 0 -S ftb_endeavour -X eval 'stuff "stop"\\015'
+ExecStop=python3 /opt/ftb_endeavour/webhook.py shutdown
+ExecStop=/bin/sh -c '/bin/sleep ${POST_SHUTDOWN_DELAY}'
+
+Restart=on-failure
+RestartSec=60s
+
+[Install]
+WantedBy=multi-user.target
